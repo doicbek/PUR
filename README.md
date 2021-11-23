@@ -16,11 +16,11 @@ alm=pur.map2alm_pure(map,mask)
 cl=hp.alm2cl(alm)
 ```
 
-Compute mode-coupling-matrix corresponding to these pseudeo-power spectra
+Compute mode-coupling matrix corresponding to these pseudeo-power spectra
 ```
 import healpy
 mcl=healpy.anafast(mask)
-mcm=pur.compute_mcm(mcl,lmax=500)
+mcm=pur.compute_mcm(mcl,lmax=500,pe1=False,pe2=False,pb1=True,pb2=True) # This assumes non-pure E-modes and pure B-modes in the mode-coupling matrix
 ```
 
 That's it!
