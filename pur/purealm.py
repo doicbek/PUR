@@ -13,9 +13,10 @@ def get_spinned_windows(w,lmax=None,mmax=None):
 
     wlm = hp.map2alm(w, lmax=lmax, mmax=mmax)
     ell = np.arange(lmax+1)
-    filter_1 = -np.sqrt((ell+1)*ell)
-    filter_2 = np.sqrt((ell+2)*(ell+1)*ell*(ell-1))
+    filter_1 = -np.sqrt((ell+1.)*ell)
+    filter_2 = -np.sqrt((ell-1.)*(ell+2.))
     
+    filter_1[:1] = 0
     filter_2[:1] = 0
     
     wlm1_e = hp.almxfl(wlm, filter_1, mmax=mmax)
@@ -25,16 +26,17 @@ def get_spinned_windows(w,lmax=None,mmax=None):
 
     w1_full = hp.alm2map_spin(np.array([wlm1_e,wlm1_b]), nside, 1, lmax=lmax, mmax=mmax)
     w2_full = hp.alm2map_spin(np.array([wlm2_e,wlm2_b]), nside, 2, lmax=lmax, mmax=mmax)
+
     w1 = []
     w2 = []
-    for i in range(len(w1_full)):
-        w1.append(w1_full[i]*w)
-        w2.append(w2_full[i]*w)
 
-    w1_plus = w1[0]
-    w1_minus = w1[1]
-    w2_plus = w2[0]
-    w2_minus = w2[1]
+    binw=np.zeros_like(w)
+    binw[w!=0]=1
+
+    w1_plus = w1_full[0]*binw
+    w1_minus = w1_full[1]*binw
+    w2_plus = w2_full[0]*binw
+    w2_minus = w2_full[1]*binw
 
     return w1_plus,w1_minus,w2_plus,w2_minus
 
