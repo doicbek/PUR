@@ -1,4 +1,9 @@
 
+#include <vector>
+#include <cmath>
+#include <cstdlib>
+#include <stdexcept>
+#include <string>
 
 #define NMT_MAX(a,b)  (((a)>(b)) ? (a) : (b)) // maximum
 #define NMT_MIN(a,b)  (((a)<(b)) ? (a) : (b)) // minimum
@@ -18,8 +23,8 @@ int drc3jj(int il2,int il3,int im2, int im3,int *l1min_out, int *l1max_out,std::
 {
   int sign1,sign2,nfin,im1,l1max,l1min,ii,lstep;
   int converging,nstep2,nfinp1,index,nlim;
-  double newfac,c1,c2,sum1,sum2,a1,a2,a1s,a2s,dv,denom,c1old,oldfac,l1,l2,l3,m1,m2,m3;
-  double x,x1,x2,x3,y,y1,y2,y3,sumfor,sumbac,sumuni,cnorm,thresh,ratio;
+  double newfac=0,c1=0,c2=0,sum1=0,sum2=0,a1=0,a2=0,a1s=0,a2s=0,dv=0,denom=1,c1old=0,oldfac=0,l1=0,l2=0,l3=0,m1=0,m2=0,m3=0;
+  double x=0,x1=0,x2=0,x3=0,y=0,y1=0,y2=0,y3=0,sumfor=0,sumbac=0,sumuni=0,cnorm=0,thresh=0,ratio=0;
   double huge=sqrt(1.79E308/20.0);
   double srhuge=sqrt(huge);
   double tiny=1./huge;
@@ -47,7 +52,7 @@ int drc3jj(int il2,int il3,int im2, int im3,int *l1min_out, int *l1max_out,std::
   }
   
   if(l1max-l1min<0) //Check for meaningful values
-    throw("WTF?\n");
+    throw std::runtime_error("drc3jj: l1max < l1min, invalid Wigner-3j parameters");
   
   if(l1max==l1min) { //If it's only one value:
     thrcof[0]=sign2/sqrt(l1min+l2+l3+1);
@@ -56,7 +61,7 @@ int drc3jj(int il2,int il3,int im2, int im3,int *l1min_out, int *l1max_out,std::
   else {
     nfin=l1max-l1min+1;
     if(nfin>size) //Check there's enough space
-      throw("Output array is too small %d\n",nfin);
+      throw std::runtime_error("drc3jj: output array too small (need " + std::to_string(nfin) + ", have " + std::to_string(size) + ")");
     else {
       l1=l1min;
       newfac=0.;
