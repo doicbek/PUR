@@ -4,7 +4,32 @@ Author: Ari Cukierman (ajcukier@stanford.edu)
 import healpy as hp
 import numpy as np
 
-def get_spinned_windows(w,lmax=None,mmax=None):    
+def get_spinned_windows(w,lmax=None,mmax=None):
+    """Compute spin-1 and spin-2 window functions from a mask.
+
+    Applies differential operators to the mask in harmonic space to obtain
+    the spin-weighted windows needed for the pure pseudo-Cl estimator.
+
+    Parameters
+    ----------
+    w : array-like, shape (Npix,)
+        The mask in HEALPix ring ordering.
+    lmax : int, optional
+        Maximum multipole l. Default: 3*nside - 1.
+    mmax : int, optional
+        Maximum m. Default: lmax.
+
+    Returns
+    -------
+    w1_plus : array, shape (Npix,)
+        Spin-1 positive-parity window.
+    w1_minus : array, shape (Npix,)
+        Spin-1 negative-parity window.
+    w2_plus : array, shape (Npix,)
+        Spin-2 positive-parity window.
+    w2_minus : array, shape (Npix,)
+        Spin-2 negative-parity window.
+    """
     nside = hp.npix2nside(len(w))
     if lmax is None:
         lmax = 3 * nside - 1
@@ -13,11 +38,11 @@ def get_spinned_windows(w,lmax=None,mmax=None):
 
     wlm = hp.map2alm(w, lmax=lmax, mmax=mmax)
     ell = np.arange(lmax+1)
-    filter_1 = -np.sqrt((ell+1.)*ell)
-    filter_2 = -np.sqrt((ell-1.)*(ell+2.))
-    
-    filter_1[:1] = 0
-    filter_2[:1] = 0
+    filter_1 = np.zeros(lmax+1)
+    filter_2 = np.zeros(lmax+1)
+    # spin-1: valid for ell >= 1; spin-2: valid for ell >= 2
+    filter_1[1:] = -np.sqrt((ell[1:]+1.)*ell[1:])
+    filter_2[2:] = -np.sqrt((ell[2:]-1.)*(ell[2:]+2.))
     
     wlm1_e = hp.almxfl(wlm, filter_1, mmax=mmax)
     wlm2_e = hp.almxfl(wlm, filter_2, mmax=mmax)
@@ -26,9 +51,6 @@ def get_spinned_windows(w,lmax=None,mmax=None):
 
     w1_full = hp.alm2map_spin(np.array([wlm1_e,wlm1_b]), nside, 1, lmax=lmax, mmax=mmax)
     w2_full = hp.alm2map_spin(np.array([wlm2_e,wlm2_b]), nside, 2, lmax=lmax, mmax=mmax)
-
-    w1 = []
-    w2 = []
 
     binw=np.zeros_like(w)
     binw[w!=0]=1
@@ -43,24 +65,27 @@ def get_spinned_windows(w,lmax=None,mmax=None):
 def map2alm_pure(maps,mask,lmax=None,mmax=None):
     """Computes pure alm of a masked Healpix map. The input maps must all be
     in ring ordering. See K. Smith (2006, astro-ph/0608662) for details
-    on the purfication scheme.
+    on the purification scheme.
+
     Parameters
     ----------
-    maps : array-like, shape (Npix,) or (n, Npix)
-      The input map or a list of n input maps. Must be in ring ordering.
-    mask : array-like, shape (Npix,) 
+    maps : array-like, shape (3, Npix)
+      The input T, Q, U maps. Must be in ring ordering.
+    mask : array-like, shape (Npix,)
       The mask which will be multiplied to the input maps.
     lmax : int, scalar, optional
       Maximum l of the power spectrum. Default: 3*nside-1
     mmax : int, scalar, optional
       Maximum m of the alm. Default: lmax
-    iter : int, scalar, optional
-      Number of iteration (default: 3)
+
     Returns
     -------
-    alms : array or tuple of array
-      tuple of 3 alm (almT, almE, almB).
+    alms : array, shape (3, Nalm)
+      Array of 3 alm arrays (almT, almE, almB).
     """
+    maps = np.asarray(maps)
+    if maps.ndim != 2 or maps.shape[0] != 3:
+        raise ValueError("maps must have shape (3, Npix) containing T, Q, U maps")
     nside = hp.npix2nside(len(mask))
 
     if lmax is None:
